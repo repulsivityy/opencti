@@ -62,15 +62,14 @@ OPEN_APPSEC_TOKEN=<ChangeMePlease>
 EOF
 ) > .env
 
-#wget -O default.conf "https://raw.githubusercontent.com/repulsivityy/VirusTotal/refs/heads/main/OpenCTI%20Integration/default.conf"
-wget -O docker-compose.yml "https://raw.githubusercontent.com/repulsivityy/VirusTotal/refs/heads/main/OpenCTI%20Integration/docker-compose.yml"
-wget -O latest_docker.sh "https://raw.githubusercontent.com/repulsivityy/VirusTotal/refs/heads/main/OpenCTI%20Integration/latest_docker.sh"
+wget -O docker-compose.yml "https://raw.githubusercontent.com/repulsivityy/opencti/refs/heads/main/docker-compose.yml"
+wget -O latest_docker.sh "https://raw.githubusercontent.com/repulsivityy/opencti/refs/heads/main/latest_docker.sh"
 chmod 755 latest_docker.sh
 
 cd ~/opencti
 mkdir open-appsec-advance-model
 cd open-appsec-advance-model
-wget -O open-appsec-advanced-model.tgz https://github.com/repulsivityy/VirusTotal/raw/refs/heads/main/OpenCTI%20Integration/open-appsec-advanced-model.tgz
+wget -O open-appsec-advanced-model.tgz https://github.com/repulsivityy/opencti/raw/refs/heads/main/open-appsec-advanced-model.tgz
 cd ~/opencti
 
 echo "####################"
