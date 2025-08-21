@@ -34,7 +34,7 @@ services:
 ##############
   redis:
     container_name: redis
-    image: redis:7.4.3
+    image: redis:8.0.3
     restart: always
     volumes: 
       - redisdata:/data
@@ -45,7 +45,7 @@ services:
       retries: 3
   elasticsearch:
     container_name: elastic
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.3
     volumes:
       - esdata:/usr/share/elasticsearch/data
     environment:
@@ -73,7 +73,7 @@ services:
       retries: 50
   minio:
     container_name: minio
-    image: minio/minio:RELEASE.2024-05-28T17-19-04Z # Use "minio/minio:RELEASE.2024-05-28T17-19-04Z-cpuv1" to troubleshoot compatibility issues with CPU
+    image: minio/minio:RELEASE.2025-06-13T11-33-47Z # Use "minio/minio:RELEASE.2024-05-28T17-19-04Z-cpuv1" to troubleshoot compatibility issues with CPU
     volumes:
       - s3data:/data
     ports:
@@ -107,7 +107,7 @@ services:
       retries: 3
   opencti:
     container_name: opencti_platform
-    image: opencti/platform:6.6.14
+    image: opencti/platform:6.7.12
     environment:
       - NODE_OPTIONS=--max-old-space-size=8096
       - APP__PORT=8080
@@ -158,7 +158,7 @@ services:
 ############################
 
   worker:
-    image: opencti/worker:6.6.14
+    image: opencti/worker:6.7.12
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -176,7 +176,7 @@ services:
 ############################
 
   connector-export-file-stix:
-    image: opencti/connector-export-file-stix:6.6.14
+    image: opencti/connector-export-file-stix:6.7.12
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -190,7 +190,7 @@ services:
       opencti:
         condition: service_healthy
   connector-export-file-csv:
-    image: opencti/connector-export-file-csv:6.6.14
+    image: opencti/connector-export-file-csv:6.7.12
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -204,7 +204,7 @@ services:
       opencti:
         condition: service_healthy
   connector-export-file-txt:
-    image: opencti/connector-export-file-txt:6.6.14
+    image: opencti/connector-export-file-txt:6.7.12
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -218,7 +218,7 @@ services:
       opencti:
         condition: service_healthy
   connector-import-file-stix:
-    image: opencti/connector-import-file-stix:6.6.14
+    image: opencti/connector-import-file-stix:6.7.12
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -234,7 +234,7 @@ services:
       opencti:
         condition: service_healthy
   connector-import-document:
-    image: opencti/connector-import-document:6.6.14
+    image: opencti/connector-import-document:6.7.12
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -256,43 +256,58 @@ services:
 ############################
 # External imports
 ############################
+  #connector-google-ti-feeds:
+  #  image: opencti/connector-google-ti-feeds:6.7.12
+  #  environment:
+  #    - OPENCTI_URL=http://opencti:8080
+  #    - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+  #    - CONNECTOR_ID=76889271-10c7-4448-8470-bf249ddfcfa7
+  #    - GTI_API_KEY=${GTI_API_KEY}
+  #    - CONNECTOR_TLP_LEVEL=AMBER+STRICT
+  #    - GTI_REPORT_ORIGINS=partner,google threat intelligence'
+  #    - GTI_THREAT_ACTOR_ORIGINS=partner,google threat intelligence
+  #    - GTI_IMPORT_THREAT_ACTORS=False # Set to True to import threat actors
+  #    - GTI_IMPORT_MALWARE_FAMILIES=False # Set to True to import malware families
+  #    - GTI_MALWARE_FAMILY_ORIGINS=partner,google threat intelligence
+  #  restart: unless-stopped
 
-  connector-mandiant:
-    container_name: mandiant_connector
-    image: opencti/connector-mandiant:6.6.14
-    environment:
-      - OPENCTI_URL=http://opencti:8080
-      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
-      - CONNECTOR_ID=a1b040c9-fa4a-4b53-8a53-33299d3f1743
-      - CONNECTOR_NAME=Mandiant
-      - CONNECTOR_SCOPE=mandiant
-      - CONNECTOR_LOG_LEVEL=error
-      - CONNECTOR_DURATION_PERIOD=PT24H # In ISO8601 Format starting with "P" for Period ex: "PT5M" = Period time of 5 minutes
-      - MANDIANT_API_V4_KEY_ID=gti-user
-      - MANDIANT_API_V4_KEY_SECRET=${GTI_API_KEY}
-      - MANDIANT_INDICATOR_MINIMUM_SCORE=70
-      - MANDIANT_IMPORT_START_DATE=2024-09-01
-      - MANDIANT_INDICATOR_IMPORT_START_DATE=2024-09-01
-      - MANDIANT_IMPORT_ACTORS_INTERVAL=48
-      - MANDIANT_IMPORT_ACTORS_ALIASES=True
-      - MANDIANT_IMPORT_REPORTS_INTERVAL=8
-      - MANDIANT_IMPORT_MALWARES=True
-      - MANDIANT_IMPORT_MALWARES_INTERVAL=24
-      - MANDIANT_IMPORT_CAMPAIGNS=True
-      - MANDIANT_IMPORT_FULL_CAMPAIGNS=True
-      - MANDIANT_IMPORT_CAMPAIGNS_INTERVAL=8
-      - MANDIANT_IMPORT_INDICATORS=True
-      - MANDIANT_IMPORT_INDICATORS_INTERVAL=8
-      - MANDIANT_ACTOR_PROFILE_REPORT_TYPE=True
-      - MANDIANT_MALWARE_PROFILE_REPORT_TYPE=True
-      - MANDIANT_TTP_DEEP_DIVE_REPORT=True
-    restart: always
-    depends_on:
-      opencti:
-        condition: service_healthy
+  #connector-mandiant:
+  #  container_name: mandiant_connector
+  #  image: opencti/connector-mandiant:6.7.12
+  #  environment:
+  #    - OPENCTI_URL=http://opencti:8080
+  #    - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+  #    - CONNECTOR_ID=a1b040c9-fa4a-4b53-8a53-33299d3f1743
+  #    - CONNECTOR_NAME=Mandiant
+  #    - CONNECTOR_SCOPE=mandiant
+  #    - CONNECTOR_LOG_LEVEL=error
+  #    - CONNECTOR_DURATION_PERIOD=PT24H # In ISO8601 Format starting with "P" for Period ex: "PT5M" = Period time of 5 minutes
+  #    - MANDIANT_API_V4_KEY_ID=gti-user
+  #    - MANDIANT_API_V4_KEY_SECRET=${GTI_API_KEY}
+  #    - MANDIANT_INDICATOR_MINIMUM_SCORE=70
+  #    - MANDIANT_IMPORT_START_DATE=2024-09-01
+  #    - MANDIANT_INDICATOR_IMPORT_START_DATE=2024-09-01
+  #    - MANDIANT_IMPORT_ACTORS_INTERVAL=48
+  #    - MANDIANT_IMPORT_ACTORS_ALIASES=True
+  #    - MANDIANT_IMPORT_REPORTS_INTERVAL=8
+  #    - MANDIANT_IMPORT_MALWARES=True
+  #    - MANDIANT_IMPORT_MALWARES_INTERVAL=24
+  #    - MANDIANT_IMPORT_CAMPAIGNS=True
+  #    - MANDIANT_IMPORT_FULL_CAMPAIGNS=True
+  #    - MANDIANT_IMPORT_CAMPAIGNS_INTERVAL=8
+  #    - MANDIANT_IMPORT_INDICATORS=True
+  #    - MANDIANT_IMPORT_INDICATORS_INTERVAL=8
+  #    - MANDIANT_ACTOR_PROFILE_REPORT_TYPE=True
+  #    - MANDIANT_MALWARE_PROFILE_REPORT_TYPE=True
+  #    - MANDIANT_TTP_DEEP_DIVE_REPORT=True
+  #  restart: always
+  #  depends_on:
+  #    opencti:
+  #      condition: service_healthy
+
   # connector-virustotal-livehunt-notifications:
   #   container_name: vt_livehuntconnector
-  #   image: opencti/connector-virustotal-livehunt-notifications:6.6.14
+  #   image: opencti/connector-virustotal-livehunt-notifications:6.7.12
   #   environment:
   #     - OPENCTI_URL=http://opencti:8080
   #     - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -317,111 +332,111 @@ services:
   #   depends_on:
   #     opencti:
   #       condition: service_healthy
-  connector-alienvault:
-    container_name: alienvault_connector
-    image: opencti/connector-alienvault:6.6.14
-    environment:
-      - OPENCTI_URL=http://opencti:8080
-      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
-      - CONNECTOR_ID=009da4af-5259-4202-9771-13ec1d4ed85f
-      - CONNECTOR_NAME=AlienVault
-      - CONNECTOR_SCOPE=alienvault
-      - CONNECTOR_LOG_LEVEL=error
-      - CONNECTOR_DURATION_PERIOD=PT2H # In ISO8601 Format starting with "P" for Period ex: "PT30M" = Period time of 30 minutes
-      - ALIENVAULT_BASE_URL=https://otx.alienvault.com
-      - ALIENVAULT_API_KEY=${ALIENVAULT_API_KEY}
-      - ALIENVAULT_TLP=White
-      - ALIENVAULT_CREATE_OBSERVABLES=true
-      - ALIENVAULT_CREATE_INDICATORS=true
-      - ALIENVAULT_PULSE_START_TIMESTAMP=2025-01-01T00:00:00                  # BEWARE! Could be a lot of pulses!
-      - ALIENVAULT_REPORT_TYPE=threat-report
-      - ALIENVAULT_REPORT_STATUS=New
-      - ALIENVAULT_GUESS_MALWARE=false                                        # Use tags to guess malware.
-      - ALIENVAULT_GUESS_CVE=false                                            # Use tags to guess CVE.
-      - ALIENVAULT_EXCLUDED_PULSE_INDICATOR_TYPES=FileHash-MD5,FileHash-SHA1  # Excluded Pulse indicator types.
-      - ALIENVAULT_ENABLE_RELATIONSHIPS=true                                  # Enable/Disable relationship creation between SDOs.
-      - ALIENVAULT_ENABLE_ATTACK_PATTERNS_INDICATES=false                     # Enable/Disable "indicates" relationships between indicators and attack patterns
-      - ALIENVAULT_INTERVAL_SEC=1800
-      - ALIENVAULT_DEFAULT_X_OPENCTI_SCORE=50
-      - ALIENVAULT_X_OPENCTI_SCORE_IP=50
-      - ALIENVAULT_X_OPENCTI_SCORE_DOMAIN=70
-      - ALIENVAULT_X_OPENCTI_SCORE_HOSTNAME=50
-      - ALIENVAULT_X_OPENCTI_SCORE_EMAIL=70
-      - ALIENVAULT_X_OPENCTI_SCORE_FILE=80
-      - ALIENVAULT_X_OPENCTI_SCORE_URL=75
-      - ALIENVAULT_X_OPENCTI_SCORE_MUTEX=60
-      - ALIENVAULT_X_OPENCTI_SCORE_CRYPTOCURRENCY_WALLET=80
-    restart: always
-    depends_on:
-      opencti:
-        condition: service_healthy
-  connector-cisa-known-exploited-vulnerabilities:
-    container_name: cisa_kev_connector
-    image: opencti/connector-cisa-known-exploited-vulnerabilities:6.6.14
-    environment:
-      - OPENCTI_URL=http://opencti:8080
-      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
-      - CONNECTOR_ID=d8bccd25-d1ce-40d6-8549-78ddc41a3787
-      - "CONNECTOR_NAME=CISA Known Exploited Vulnerabilities"
-      - CONNECTOR_SCOPE=cisa
-      - CONNECTOR_RUN_AND_TERMINATE=false
-      - CONNECTOR_LOG_LEVEL=error
-      - CONNECTOR_DURATION_PERIOD=P2D
-      - CISA_CATALOG_URL=https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
-      - CISA_CREATE_INFRASTRUCTURES=false
-      - CISA_TLP=TLP:CLEAR
-    restart: always
-    depends_on:
-      opencti:
-        condition: service_healthy
-  connector-threatfox:
-    container_name: threatfox_connector
-    image: opencti/connector-threatfox:6.6.14
-    environment:
-      - OPENCTI_URL=http://opencti:8080
-      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
-      - CONNECTOR_ID=b9dd9381-5fd7-499b-a01b-0d4dc4900b2c
-      - CONNECTOR_NAME=ThreatFox
-      - CONNECTOR_SCOPE=ThreatFox
-      - CONNECTOR_CONFIDENCE_LEVEL=40 # From 0 (Unknown) to 100 (Fully trusted)
-      - CONNECTOR_LOG_LEVEL=error
-      - THREATFOX_CSV_URL=https://threatfox.abuse.ch/export/csv/recent/
-      - THREATFOX_IMPORT_OFFLINE=true
-      - THREATFOX_CREATE_INDICATORS=true
-      - THREATFOX_DEFAULT_X_OPENCTI_SCORE=50
-      - THREATFOX_X_OPENCTI_SCORE_IP=60
-      - THREATFOX_X_OPENCTI_SCORE_DOMAIN=70
-      - THREATFOX_X_OPENCTI_SCORE_URL=75
-      - THREATFOX_X_OPENCTI_SCORE_HASH=80
-      - THREATFOX_INTERVAL=3 # In days, must be strictly greater than 1
-      - THREATFOX_IOC_TO_IMPORT=ip:port,domain,url,sha256_hash # List of IOC types to import
-    restart: always
-    depends_on:
-      opencti:
-        condition: service_healthy
-  connector-ransomware:
-    container_name: ransomwarelive_connector
-    image: opencti/connector-ransomwarelive:6.6.14
-    environment:
-      # Connector's definition parameters:
-      - CONNECTOR_NAME=Ransomware Connector
-      - CONNECTOR_SCOPE=identity,attack-pattern,course-of-action,intrusion-set,malware,tool,report
-      # Connector's generic execution parameters:
-      - OPENCTI_URL=http://opencti:8080
-      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
-      - CONNECTOR_ID=694281b3-6723-4533-88f0-3a618c87cd5d
-      - CONNECTOR_LOG_LEVEL=info # Log level: debug, info, warn, error
-      - CONNECTOR_UPDATE_EXISTING_DATA=True
-      - CONNECTOR_PULL_HISTORY=false # If true, the connector will pull the history of the data. But it is not recommended to set it to true as there will a large influx of data.
-      - CONNECTOR_HISTORY_START_YEAR=2025 # Data only goes back till 2020
-      - CONNECTOR_RUN_EVERY=480m # 10 minutes will be the ideal time
-    restart: always
-    depends_on:
-      opencti:
-        condition: service_healthy
+  #connector-alienvault:
+  #  container_name: alienvault_connector
+  #  image: opencti/connector-alienvault:6.7.12
+  #  environment:
+  #    - OPENCTI_URL=http://opencti:8080
+  #    - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+  #    - CONNECTOR_ID=009da4af-5259-4202-9771-13ec1d4ed85f
+  #    - CONNECTOR_NAME=AlienVault
+  #    - CONNECTOR_SCOPE=alienvault
+  #    - CONNECTOR_LOG_LEVEL=error
+  #    - CONNECTOR_DURATION_PERIOD=PT2H # In ISO8601 Format starting with "P" for Period ex: "PT30M" = Period time of 30 minutes
+  #    - ALIENVAULT_BASE_URL=https://otx.alienvault.com
+  #    - ALIENVAULT_API_KEY=${ALIENVAULT_API_KEY}
+  #    - ALIENVAULT_TLP=White
+  #    - ALIENVAULT_CREATE_OBSERVABLES=true
+  #    - ALIENVAULT_CREATE_INDICATORS=true
+  #    - ALIENVAULT_PULSE_START_TIMESTAMP=2025-01-01T00:00:00                  # BEWARE! Could be a lot of pulses!
+  #    - ALIENVAULT_REPORT_TYPE=threat-report
+  #    - ALIENVAULT_REPORT_STATUS=New
+  #    - ALIENVAULT_GUESS_MALWARE=false                                        # Use tags to guess malware.
+  #    - ALIENVAULT_GUESS_CVE=false                                            # Use tags to guess CVE.
+  #    - ALIENVAULT_EXCLUDED_PULSE_INDICATOR_TYPES=FileHash-MD5,FileHash-SHA1  # Excluded Pulse indicator types.
+  #    - ALIENVAULT_ENABLE_RELATIONSHIPS=true                                  # Enable/Disable relationship creation between SDOs.
+  #    - ALIENVAULT_ENABLE_ATTACK_PATTERNS_INDICATES=false                     # Enable/Disable "indicates" relationships between indicators and attack patterns
+  #    - ALIENVAULT_INTERVAL_SEC=1800
+  #    - ALIENVAULT_DEFAULT_X_OPENCTI_SCORE=50
+  #    - ALIENVAULT_X_OPENCTI_SCORE_IP=50
+  #    - ALIENVAULT_X_OPENCTI_SCORE_DOMAIN=70
+  #    - ALIENVAULT_X_OPENCTI_SCORE_HOSTNAME=50
+  #    - ALIENVAULT_X_OPENCTI_SCORE_EMAIL=70
+  #    - ALIENVAULT_X_OPENCTI_SCORE_FILE=80
+  #    - ALIENVAULT_X_OPENCTI_SCORE_URL=75
+  #    - ALIENVAULT_X_OPENCTI_SCORE_MUTEX=60
+  #    - ALIENVAULT_X_OPENCTI_SCORE_CRYPTOCURRENCY_WALLET=80
+  #  restart: always
+  #  depends_on:
+  #    opencti:
+  #      condition: service_healthy
+  #connector-cisa-known-exploited-vulnerabilities:
+  #  container_name: cisa_kev_connector
+  #  image: opencti/connector-cisa-known-exploited-vulnerabilities:6.7.12
+  #  environment:
+  #    - OPENCTI_URL=http://opencti:8080
+  #    - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+  #    - CONNECTOR_ID=d8bccd25-d1ce-40d6-8549-78ddc41a3787
+  #    - "CONNECTOR_NAME=CISA Known Exploited Vulnerabilities"
+  #    - CONNECTOR_SCOPE=cisa
+  #    - CONNECTOR_RUN_AND_TERMINATE=false
+  #    - CONNECTOR_LOG_LEVEL=error
+  #    - CONNECTOR_DURATION_PERIOD=P2D
+  #    - CISA_CATALOG_URL=https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
+  #    - CISA_CREATE_INFRASTRUCTURES=false
+  #    - CISA_TLP=TLP:CLEAR
+  #  restart: always
+  #  depends_on:
+  #    opencti:
+  #      condition: service_healthy
+  #connector-threatfox:
+  #  container_name: threatfox_connector
+  #  image: opencti/connector-threatfox:6.7.12
+  #  environment:
+  #    - OPENCTI_URL=http://opencti:8080
+  #    - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+  #    - CONNECTOR_ID=b9dd9381-5fd7-499b-a01b-0d4dc4900b2c
+  #    - CONNECTOR_NAME=ThreatFox
+  #    - CONNECTOR_SCOPE=ThreatFox
+  #    - CONNECTOR_CONFIDENCE_LEVEL=40 # From 0 (Unknown) to 100 (Fully trusted)
+  #    - CONNECTOR_LOG_LEVEL=error
+  #    - THREATFOX_CSV_URL=https://threatfox.abuse.ch/export/csv/recent/
+  #    - THREATFOX_IMPORT_OFFLINE=true
+  #    - THREATFOX_CREATE_INDICATORS=true
+  #    - THREATFOX_DEFAULT_X_OPENCTI_SCORE=50
+  #    - THREATFOX_X_OPENCTI_SCORE_IP=60
+  #    - THREATFOX_X_OPENCTI_SCORE_DOMAIN=70
+  #    - THREATFOX_X_OPENCTI_SCORE_URL=75
+  #    - THREATFOX_X_OPENCTI_SCORE_HASH=80
+  #    - THREATFOX_INTERVAL=3 # In days, must be strictly greater than 1
+  #    - THREATFOX_IOC_TO_IMPORT=ip:port,domain,url,sha256_hash # List of IOC types to import
+  #  restart: always
+  #  depends_on:
+  #    opencti:
+  #      condition: service_healthy
+  #connector-ransomware:
+  #  container_name: ransomwarelive_connector
+  #  image: opencti/connector-ransomwarelive:6.7.12
+  #  environment:
+  #    # Connector's definition parameters:
+  #    - CONNECTOR_NAME=Ransomware Connector
+  #    - CONNECTOR_SCOPE=identity,attack-pattern,course-of-action,intrusion-set,malware,tool,report
+  #    # Connector's generic execution parameters:
+  #    - OPENCTI_URL=http://opencti:8080
+  #    - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+  #    - CONNECTOR_ID=694281b3-6723-4533-88f0-3a618c87cd5d
+  #    - CONNECTOR_LOG_LEVEL=info # Log level: debug, info, warn, error
+  #    - CONNECTOR_UPDATE_EXISTING_DATA=True
+  #    - CONNECTOR_PULL_HISTORY=false # If true, the connector will pull the history of the data. But it is not recommended to set it to true as there will a large influx of data.
+  #    - CONNECTOR_HISTORY_START_YEAR=2025 # Data only goes back till 2020
+  #    - CONNECTOR_RUN_EVERY=480m # 10 minutes will be the ideal time
+  #  restart: always
+  #  depends_on:
+  #    opencti:
+  #      condition: service_healthy
   # connector-phishunt:
   #   container_name: phishhunt_connector
-  #   image: opencti/connector-phishunt:6.6.14
+  #   image: opencti/connector-phishunt:6.7.12
   #   environment:
   #     - OPENCTI_URL=http://opencti:8080
   #     - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -440,26 +455,26 @@ services:
   #   depends_on:
   #     opencti:
   #       condition: service_healthy
-  connector-anyrun-feed:
-    container_name: anyrun_feeds
-    image: opencti/connector-anyrun-feed:6.6.12
-    environment:
-      - OPENCTI_URL=http://opencti:8080
-      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
-      - CONNECTOR_ID=ec9bfb29-2196-45cc-bf17-e56e3defc7cd
-      - CONNECTOR_NAME=ANYRUN_feed
-      - CONNECTOR_SCOPE=stix2
-      - CONNECTOR_LOG_LEVEL=info
-      - CONNECTOR_RUN_EVERY=1d
-      - ANYRUN_TI_TOKEN=${ANYRUN_APIKEY} # Required
-    restart: always
+  #connector-anyrun-feed:
+  #  container_name: anyrun_feeds
+  #  image: opencti/connector-anyrun-feed:6.6.12
+  #  environment:
+  #    - OPENCTI_URL=http://opencti:8080
+  #    - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+  #    - CONNECTOR_ID=ec9bfb29-2196-45cc-bf17-e56e3defc7cd
+  #    - CONNECTOR_NAME=ANYRUN_feed
+  #    - CONNECTOR_SCOPE=stix2
+  #    - CONNECTOR_LOG_LEVEL=info
+  #    - CONNECTOR_RUN_EVERY=1d
+  #    - ANYRUN_TI_TOKEN=${ANYRUN_APIKEY} # Required
+  #  restart: always
 ############################
 # Enrichments
 ############################
 
   connector-virustotal:
     container_name: vt_connector
-    image: opencti/connector-virustotal:6.6.14
+    image: opencti/connector-virustotal:6.7.12
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -503,7 +518,7 @@ services:
         condition: service_healthy
   connector-shodan-internetdb:
     container_name: shodan_internetdb_connector
-    image: opencti/connector-shodan-internetdb:6.6.14
+    image: opencti/connector-shodan-internetdb:6.7.12
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -520,7 +535,7 @@ services:
         condition: service_healthy
   connector-mitre:
     container_name: mitre_connector
-    image: opencti/connector-mitre:6.6.14
+    image: opencti/connector-mitre:6.7.12
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -537,7 +552,7 @@ services:
         condition: service_healthy
   connector-urlscan-enrichment:
     container_name: urlscan_connector
-    image: opencti/connector-urlscan-enrichment:6.6.14
+    image: opencti/connector-urlscan-enrichment:6.7.12
     environment:
       # OpenCTI's generic execution parameters:
       - OPENCTI_URL=http://opencti:8080
@@ -561,7 +576,7 @@ services:
         condition: service_healthy
   connector-opencti:
     container_name: opencti_connector
-    image: opencti/connector-opencti:6.6.14
+    image: opencti/connector-opencti:6.7.12
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -583,7 +598,7 @@ services:
         condition: service_healthy
   connector-greynoise:
     container_name: greynoise_connector
-    image: opencti/connector-greynoise:6.6.14
+    image: opencti/connector-greynoise:6.7.12
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
