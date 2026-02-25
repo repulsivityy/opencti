@@ -1,5 +1,5 @@
 ##############
-# NGINX Porxy Manager + Open-AppSec
+# NGINX Proxy Manager + Open-AppSec
 ##############
 services:
   appsec-npm:
@@ -29,12 +29,13 @@ services:
       - ./appsec-logs:/var/log/nano_agent
       - ./open-appsec-advance-model/open-appsec-advanced-model.tgz:/advanced-model/open-appsec-advanced-model.tgz:rw
     command: "/cp-nano-agent --token ${OPEN_APPSEC_TOKEN}"
+
 ##############
 # Main Services
 ##############
   redis:
     container_name: redis
-    image: redis:8.2.1
+    image: redis:8.4.0
     restart: always
     volumes: 
       - redisdata:/data
@@ -45,7 +46,7 @@ services:
       retries: 3
   elasticsearch:
     container_name: elastic
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.9
     volumes:
       - esdata:/usr/share/elasticsearch/data
     environment:
@@ -90,7 +91,7 @@ services:
       retries: 3
   rabbitmq:
     container_name: rabbitmq
-    image: rabbitmq:4.1-management
+    image: rabbitmq:4.2-management
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
@@ -105,9 +106,53 @@ services:
       interval: 30s
       timeout: 30s
       retries: 3
+      
+##############
+# Needed for XTM Composer
+##############
+  rsa-key-generator:
+    image: alpine/openssl:3.5.4
+    volumes:
+      - rsakeys:/keys
+    entrypoint: ["/bin/ash"]
+    command: ["-c", "if [ ! -f /keys/private_key.pem ]; then openssl genpkey -algorithm RSA -out /keys/private_key.pem -pkeyopt rsa_keygen_bits:4096; fi && tail -f /dev/null"]
+    healthcheck:
+      test: ["CMD", "test", "-f", "/keys/private_key.pem"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: always
+  xtm-composer:
+    image: filigran/xtm-composer:1.0.2
+    platform: linux/amd64
+    environment:
+      - MANAGER__ID=${XTM_COMPOSER_ID}
+      - "MANAGER__NAME=XTM Integrations Manager"
+      - MANAGER__CREDENTIALS_KEY_FILEPATH=/keys/private_key.pem
+      - OPENCTI__ENABLE=true
+      - OPENCTI__URL=http://opencti:8080
+      - OPENCTI__TOKEN=${OPENCTI_ADMIN_TOKEN}
+      - OPENCTI__DAEMON__SELECTOR=docker
+      - OPENCTI__DAEMON__DOCKER__NETWORK_MODE=${COMPOSE_PROJECT_NAME}_default
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - rsakeys:/keys:ro  # RSA key mounted as read-only
+    depends_on:
+      rsa-key-generator:
+        condition: service_healthy
+      opencti:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+
+##############
+# NGINX Proxy Manager + Open-AppSec
+##############
+
   opencti:
     container_name: opencti_platform
-    image: opencti/platform:6.8.10
+    image: opencti/platform:7.260224.0
     environment:
       - NODE_OPTIONS=--max-old-space-size=8096
       - APP__PORT=8080
@@ -158,7 +203,7 @@ services:
 ############################
 
   worker:
-    image: opencti/worker:6.8.10
+    image: opencti/worker:7.260224.0
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -172,11 +217,55 @@ services:
     restart: always
 
 ############################
+# Default OpenCTI Connectors
+############################
+
+  connector-opencti:
+    container_name: opencti_connector
+    image: opencti/connector-opencti:7.260224.0
+    environment:
+      - OPENCTI_URL=http://opencti:8080
+      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+      - CONNECTOR_ID=a02900a5-5964-4ae3-9ebc-76d9d16f30ac
+      - "CONNECTOR_NAME=OpenCTI Datasets"
+      - CONNECTOR_SCOPE=marking-definition,identity,location
+      - CONNECTOR_CONFIDENCE_LEVEL=100
+      - CONNECTOR_UPDATE_EXISTING_DATA=true
+      - CONNECTOR_RUN_AND_TERMINATE=false
+      - CONNECTOR_LOG_LEVEL=error
+      - CONFIG_SECTORS_FILE_URL=https://raw.githubusercontent.com/OpenCTI-Platform/datasets/master/data/sectors.json
+      - CONFIG_GEOGRAPHY_FILE_URL=https://raw.githubusercontent.com/OpenCTI-Platform/datasets/master/data/geography.json
+      - CONFIG_COMPANIES_FILE_URL=https://raw.githubusercontent.com/OpenCTI-Platform/datasets/master/data/companies.json
+      - CONFIG_REMOVE_CREATOR=false
+      - CONFIG_INTERVAL=7 # In days
+    restart: always
+    depends_on:
+      opencti:
+        condition: service_healthy
+  connector-mitre:
+    container_name: mitre_connector
+    image: opencti/connector-mitre:7.260224.0
+    environment:
+      - OPENCTI_URL=http://opencti:8080
+      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+      - CONNECTOR_ID=ad36fd8b-3748-4433-8d66-0d1026d75773
+      - "CONNECTOR_NAME=MITRE Datasets"
+      - CONNECTOR_SCOPE=tool,report,malware,identity,campaign,intrusion-set,attack-pattern,course-of-action,x-mitre-data-source,x-mitre-data-component,x-mitre-matrix,x-mitre-tactic,x-mitre-collection
+      - CONNECTOR_RUN_AND_TERMINATE=false
+      - CONNECTOR_LOG_LEVEL=error
+      - MITRE_REMOVE_STATEMENT_MARKING=true
+      - MITRE_INTERVAL=7 # In days
+    restart: always
+    depends_on:
+      opencti:
+        condition: service_healthy
+
+############################
 # Export / Import Documents
 ############################
 
   connector-export-file-stix:
-    image: opencti/connector-export-file-stix:6.8.10
+    image: opencti/connector-export-file-stix:7.260224.0
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -190,7 +279,7 @@ services:
       opencti:
         condition: service_healthy
   connector-export-file-csv:
-    image: opencti/connector-export-file-csv:6.8.10
+    image: opencti/connector-export-file-csv:7.260224.0
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -204,7 +293,7 @@ services:
       opencti:
         condition: service_healthy
   connector-export-file-txt:
-    image: opencti/connector-export-file-txt:6.8.10
+    image: opencti/connector-export-file-txt:7.260224.0
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -218,7 +307,7 @@ services:
       opencti:
         condition: service_healthy
   connector-import-file-stix:
-    image: opencti/connector-import-file-stix:6.8.10
+    image: opencti/connector-import-file-stix:7.260224.0
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -234,7 +323,7 @@ services:
       opencti:
         condition: service_healthy
   connector-import-document:
-    image: opencti/connector-import-document:6.8.10
+    image: opencti/connector-import-document:7.260224.0
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -257,7 +346,7 @@ services:
 # External imports
 ############################
   #connector-google-ti-feeds:
-  #  image: opencti/connector-google-ti-feeds:6.8.10
+  #  image: opencti/connector-google-ti-feeds:7.260224.0
   #  environment:
   #    - OPENCTI_URL=http://opencti:8080
   #    - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -273,7 +362,7 @@ services:
 
   #connector-mandiant:
   #  container_name: mandiant_connector
-  #  image: opencti/connector-mandiant:6.8.10
+  #  image: opencti/connector-mandiant:7.260224.0
   #  environment:
   #    - OPENCTI_URL=http://opencti:8080
   #    - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -307,7 +396,7 @@ services:
 
   # connector-virustotal-livehunt-notifications:
   #   container_name: vt_livehuntconnector
-  #   image: opencti/connector-virustotal-livehunt-notifications:6.8.10
+  #   image: opencti/connector-virustotal-livehunt-notifications:7.260224.0
   #   environment:
   #     - OPENCTI_URL=http://opencti:8080
   #     - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -332,9 +421,10 @@ services:
   #   depends_on:
   #     opencti:
   #       condition: service_healthy
+
   #connector-alienvault:
   #  container_name: alienvault_connector
-  #  image: opencti/connector-alienvault:6.8.10
+  #  image: opencti/connector-alienvault:7.260224.0
   #  environment:
   #    - OPENCTI_URL=http://opencti:8080
   #    - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -370,9 +460,10 @@ services:
   #  depends_on:
   #    opencti:
   #      condition: service_healthy
+
   connector-cisa-known-exploited-vulnerabilities:
     container_name: cisa_kev_connector
-    image: opencti/connector-cisa-known-exploited-vulnerabilities:6.8.10
+    image: opencti/connector-cisa-known-exploited-vulnerabilities:7.260224.0
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -391,7 +482,7 @@ services:
         condition: service_healthy
   #connector-threatfox:
   #  container_name: threatfox_connector
-  #  image: opencti/connector-threatfox:6.8.10
+  #  image: opencti/connector-threatfox:7.260224.0
   #  environment:
   #    - OPENCTI_URL=http://opencti:8080
   #    - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -416,7 +507,7 @@ services:
   #      condition: service_healthy
   connector-ransomware:
     container_name: ransomwarelive_connector
-    image: opencti/connector-ransomwarelive:6.8.10
+    image: opencti/connector-ransomwarelive:7.260224.0
     environment:
       # Connector's definition parameters:
       - CONNECTOR_NAME=Ransomware Connector
@@ -436,7 +527,7 @@ services:
         condition: service_healthy
   # connector-phishunt:
   #   container_name: phishhunt_connector
-  #   image: opencti/connector-phishunt:6.8.10
+  #   image: opencti/connector-phishunt:7.260224.0
   #   environment:
   #     - OPENCTI_URL=http://opencti:8080
   #     - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -475,7 +566,7 @@ services:
 
   connector-virustotal:
     container_name: vt_connector
-    image: opencti/connector-virustotal:6.8.10
+    image: opencti/connector-virustotal:7.260224.0
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -519,7 +610,7 @@ services:
         condition: service_healthy
   connector-shodan-internetdb:
     container_name: shodan_internetdb_connector
-    image: opencti/connector-shodan-internetdb:6.8.10
+    image: opencti/connector-shodan-internetdb:7.260224.0
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
@@ -534,26 +625,9 @@ services:
     depends_on:
       opencti:
         condition: service_healthy
-  connector-mitre:
-    container_name: mitre_connector
-    image: opencti/connector-mitre:6.8.10
-    environment:
-      - OPENCTI_URL=http://opencti:8080
-      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
-      - CONNECTOR_ID=ad36fd8b-3748-4433-8d66-0d1026d75773
-      - "CONNECTOR_NAME=MITRE Datasets"
-      - CONNECTOR_SCOPE=tool,report,malware,identity,campaign,intrusion-set,attack-pattern,course-of-action,x-mitre-data-source,x-mitre-data-component,x-mitre-matrix,x-mitre-tactic,x-mitre-collection
-      - CONNECTOR_RUN_AND_TERMINATE=false
-      - CONNECTOR_LOG_LEVEL=error
-      - MITRE_REMOVE_STATEMENT_MARKING=true
-      - MITRE_INTERVAL=7 # In days
-    restart: always
-    depends_on:
-      opencti:
-        condition: service_healthy
   connector-urlscan-enrichment:
     container_name: urlscan_connector
-    image: opencti/connector-urlscan-enrichment:6.8.10
+    image: opencti/connector-urlscan-enrichment:7.260224.0
     environment:
       # OpenCTI's generic execution parameters:
       - OPENCTI_URL=http://opencti:8080
@@ -575,31 +649,9 @@ services:
     depends_on:
       opencti:
         condition: service_healthy
-  connector-opencti:
-    container_name: opencti_connector
-    image: opencti/connector-opencti:6.8.10
-    environment:
-      - OPENCTI_URL=http://opencti:8080
-      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
-      - CONNECTOR_ID=a02900a5-5964-4ae3-9ebc-76d9d16f30ac
-      - "CONNECTOR_NAME=OpenCTI Datasets"
-      - CONNECTOR_SCOPE=marking-definition,identity,location
-      - CONNECTOR_CONFIDENCE_LEVEL=100
-      - CONNECTOR_UPDATE_EXISTING_DATA=true
-      - CONNECTOR_RUN_AND_TERMINATE=false
-      - CONNECTOR_LOG_LEVEL=error
-      - CONFIG_SECTORS_FILE_URL=https://raw.githubusercontent.com/OpenCTI-Platform/datasets/master/data/sectors.json
-      - CONFIG_GEOGRAPHY_FILE_URL=https://raw.githubusercontent.com/OpenCTI-Platform/datasets/master/data/geography.json
-      - CONFIG_COMPANIES_FILE_URL=https://raw.githubusercontent.com/OpenCTI-Platform/datasets/master/data/companies.json
-      - CONFIG_REMOVE_CREATOR=false
-      - CONFIG_INTERVAL=7 # In days
-    restart: always
-    depends_on:
-      opencti:
-        condition: service_healthy
   connector-greynoise:
     container_name: greynoise_connector
-    image: opencti/connector-greynoise:6.8.10
+    image: opencti/connector-greynoise:7.260224.0
     environment:
       - OPENCTI_URL=http://opencti:8080
       - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
