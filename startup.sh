@@ -47,15 +47,23 @@ MINIO_ROOT_PASSWORD=$(cat /proc/sys/kernel/random/uuid)
 RABBITMQ_DEFAULT_USER=guest
 RABBITMQ_DEFAULT_PASS=guest
 ELASTIC_MEMORY_SIZE=4G
+SMTP_HOSTNAME=localhost
+
 CONNECTOR_HISTORY_ID=$(cat /proc/sys/kernel/random/uuid)
 CONNECTOR_EXPORT_FILE_STIX_ID=$(cat /proc/sys/kernel/random/uuid)
 CONNECTOR_EXPORT_FILE_CSV_ID=$(cat /proc/sys/kernel/random/uuid)
-CONNECTOR_IMPORT_FILE_STIX_ID=$(cat /proc/sys/kernel/random/uuid)
 CONNECTOR_EXPORT_FILE_TXT_ID=$(cat /proc/sys/kernel/random/uuid)
+CONNECTOR_IMPORT_FILE_STIX_ID=$(cat /proc/sys/kernel/random/uuid)
 CONNECTOR_IMPORT_DOCUMENT_ID=$(cat /proc/sys/kernel/random/uuid)
 CONNECTOR_ANALYSIS_ID=$(cat /proc/sys/kernel/random/uuid)
+CONNECTOR_OPENCTI_ID=$(cat /proc/sys/kernel/random/uuid)
+CONNECTOR_OPENCTI_MITRE=$(cat /proc/sys/kernel/random/uuid)
+CONNECTOR_IMPORT_FILE_YARA_ID=$(cat /proc/sys/kernel/random/uuid)
+CONNECTOR_MITRE_ATLAS_ID=$(cat /proc/sys/kernel/random/uuid)
+CONNECTOR_IMPORT_EXTERNAL_REFERENCE_ID=$(cat /proc/sys/kernel/random/uuid)
+
 SMTP_HOSTNAME=localhost
-GTI_API_KEY=
+GTI_API_KEY=<ChangeMePlease>
 URLSCAN_API_KEY=<ChangeMePlease>
 ALIENVAULT_API_KEY=<ChangeMePlease>
 GREYNOISE_API_KEY=<ChangeMePlease>
