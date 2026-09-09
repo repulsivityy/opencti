@@ -387,6 +387,24 @@ services:
       opencti:
         condition: service_healthy
  
+  connector-google-ti-feeds:
+    image: opencti/connector-google-ti-feeds:latest
+    environment:
+      - OPENCTI_URL=http://opencti:8080
+      - OPENCTI_TOKEN=${OPENCTI_ADMIN_TOKEN}
+      - CONNECTOR_ID=${CONNECTOR_GTI_FEEDS}
+      - "CONNECTOR_NAME=Google TI Feeds"
+      - CONNECTOR_SCOPE=report
+      - CONNECTOR_LOG_LEVEL=info
+      - GTI_API_KEY=${GTI_API_KEY}
+      - GTI_IMPORT_REPORTS=true
+      - "GTI_REPORT_TYPES=Actor Profile,Event Coverage/Implication,TTP Deep Dive"
+      - "GTI_REPORT_ORIGINS=google threat intelligence"
+      - GTI_REPORT_IMPORT_START_DATE=P7D
+    restart: always
+    depends_on:
+      opencti:
+        condition: service_healthy
   
 ############################
 # Enrichments

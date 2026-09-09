@@ -31,13 +31,30 @@ echo "####################"
 
 mkdir ~/opencti
 cd ~/opencti
-vi .env
 
-sudo echo "vm.max_map_count=1048575" >> /etc/sysctl.conf
+echo "vm.max_map_count=1048575" | sudo tee -a /etc/sysctl.conf
+sudo sysctl -w vm.max_map_count=1048575
+
+echo ""
+echo "####################"
+echo "Configure OpenCTI"
+echo "####################"
+
+TTY="/dev/tty"
+[ ! -e /dev/tty ] && TTY="/dev/stdin"
+
+read -p "Enter OpenCTI Admin Email: " OPENCTI_ADMIN_EMAIL < "$TTY"
+read -s -p "Enter OpenCTI Admin Password: " OPENCTI_ADMIN_PASSWORD < "$TTY"
+echo ""
+read -p "Enter Open-AppSec Token (press Enter to skip): " OPEN_APPSEC_TOKEN < "$TTY"
+read -p "Enter VirusTotal / GTI API Key (press Enter to skip): " GTI_API_KEY < "$TTY"
+read -p "Enter URLScan API Key (press Enter to skip): " URLSCAN_API_KEY < "$TTY"
+read -p "Enter AlienVault API Key (press Enter to skip): " ALIENVAULT_API_KEY < "$TTY"
+read -p "Enter GreyNoise API Key (press Enter to skip): " GREYNOISE_API_KEY < "$TTY"
 
 (cat << EOF
-OPENCTI_ADMIN_EMAIL=<ChangeMePlease>
-OPENCTI_ADMIN_PASSWORD=<ChangeMePlease>
+OPENCTI_ADMIN_EMAIL=${OPENCTI_ADMIN_EMAIL}
+OPENCTI_ADMIN_PASSWORD=${OPENCTI_ADMIN_PASSWORD}
 OPENCTI_ADMIN_TOKEN=$(cat /proc/sys/kernel/random/uuid)
 OPENCTI_BASE_URL=http://localhost:8080
 OPENCTI_HEALTHCHECK_ACCESS_KEY=$(cat /proc/sys/kernel/random/uuid)
@@ -62,12 +79,11 @@ CONNECTOR_IMPORT_FILE_YARA_ID=$(cat /proc/sys/kernel/random/uuid)
 CONNECTOR_MITRE_ATLAS_ID=$(cat /proc/sys/kernel/random/uuid)
 CONNECTOR_IMPORT_EXTERNAL_REFERENCE_ID=$(cat /proc/sys/kernel/random/uuid)
 
-SMTP_HOSTNAME=localhost
-GTI_API_KEY=<ChangeMePlease>
-URLSCAN_API_KEY=<ChangeMePlease>
-ALIENVAULT_API_KEY=<ChangeMePlease>
-GREYNOISE_API_KEY=<ChangeMePlease>
-OPEN_APPSEC_TOKEN=<ChangeMePlease>
+GTI_API_KEY=${GTI_API_KEY}
+URLSCAN_API_KEY=${URLSCAN_API_KEY}
+ALIENVAULT_API_KEY=${ALIENVAULT_API_KEY}
+GREYNOISE_API_KEY=${GREYNOISE_API_KEY}
+OPEN_APPSEC_TOKEN=${OPEN_APPSEC_TOKEN}
 EOF
 ) > .env
 
