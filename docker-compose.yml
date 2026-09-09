@@ -69,24 +69,9 @@ services:
         hard: 65536
     healthcheck:
       test: curl -s http://elasticsearch:9200 >/dev/null || exit 1
-      interval: 30s
+      interval: 10s
       timeout: 10s
       retries: 50
-  pgsql-xtm-one:
-    # Dedicated pgvector-enabled instance for XTM One.
-    image: pgvector/pgvector:pg17
-    environment:
-      POSTGRES_USER: ${XTM_ONE_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${XTM_ONE_POSTGRES_PASSWORD}
-      POSTGRES_DB: xtm_one
-    volumes:
-      - pgsqlxtmonedata:/var/lib/postgresql/data
-    restart: always
-    healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "${XTM_ONE_POSTGRES_USER}", "-d", "xtm_one" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
   minio:
     container_name: minio
     image: minio/minio:latest
@@ -122,54 +107,6 @@ services:
       timeout: 30s
       retries: 3
       
-##############
-# Needed for XTM Composer
-##############
-  rsa-key-generator:
-    image: alpine/openssl:latest
-    volumes:
-      - rsakeys:/keys
-    entrypoint: ["/bin/ash"]
-    command: ["-c", "if [ ! -f /keys/private_key.pem ]; then openssl genpkey -algorithm RSA -out /keys/private_key.pem -pkeyopt rsa_keygen_bits:4096; fi && tail -f /dev/null"]
-    healthcheck:
-      test: ["CMD", "test", "-f", "/keys/private_key.pem"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    restart: always
-  redis:
-    image: redis:8.8.0
-    restart: always
-    volumes:
-      - redisdata:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-  xtm-composer:
-    image: filigran/xtm-composer:1.0.2
-    platform: linux/amd64
-    environment:
-      - MANAGER__ID=${XTM_COMPOSER_ID}
-      - "MANAGER__NAME=XTM Integrations Manager"
-      - MANAGER__CREDENTIALS_KEY_FILEPATH=/keys/private_key.pem
-      - OPENCTI__ENABLE=true
-      - OPENCTI__URL=http://opencti:8080
-      - OPENCTI__TOKEN=${OPENCTI_ADMIN_TOKEN}
-      - OPENCTI__DAEMON__SELECTOR=docker
-      - OPENCTI__DAEMON__DOCKER__NETWORK_MODE=${COMPOSE_PROJECT_NAME}_default
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - rsakeys:/keys:ro  # RSA key mounted as read-only
-    depends_on:
-      rsa-key-generator:
-        condition: service_healthy
-      opencti:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    restart: always
 
 ##############
 # NGINX Proxy Manager + Open-AppSec
@@ -190,6 +127,7 @@ services:
       - REDIS__HOSTNAME=redis
       - REDIS__PORT=6379
       - ELASTICSEARCH__URL=http://elasticsearch:9200
+      - ELASTICSEARCH__NUMBER_OF_REPLICAS=0
       - MINIO__ENDPOINT=minio
       - MINIO__PORT=9000
       - MINIO__USE_SSL=false
@@ -562,4 +500,3 @@ volumes:
   redisdata:
   amqpdata:
   rsakeys:
-  pgsqlxtmonedata:
