@@ -125,7 +125,7 @@ services:
 ##############
 # Needed for XTM Composer
 ##############
- rsa-key-generator:
+  rsa-key-generator:
     image: alpine/openssl:latest
     volumes:
       - rsakeys:/keys
