@@ -125,8 +125,8 @@ services:
 ##############
 # Needed for XTM Composer
 ##############
-  rsa-key-generator:
-    image: alpine/openssl:3.5.4
+ rsa-key-generator:
+    image: alpine/openssl:latest
     volumes:
       - rsakeys:/keys
     entrypoint: ["/bin/ash"]
@@ -137,6 +137,16 @@ services:
       timeout: 5s
       retries: 3
     restart: always
+  redis:
+    image: redis:8.8.0
+    restart: always
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
   xtm-composer:
     image: filigran/xtm-composer:1.0.2
     platform: linux/amd64
@@ -550,3 +560,5 @@ volumes:
   s3data:
   redisdata:
   amqpdata:
+  rsakeys:
+  pgsqlxtmonedata:
